@@ -1,22 +1,13 @@
 {
-  "glossary": {
-      "title": "example glossary",
-  "GlossDiv": {
-          "title": "S",
-    "GlossList": {
-              "GlossEntry": {
-                  "ID": "SGML",
-        "SortAs": "SGML",
-        "GlossTerm": "Standard Generalized Markup Language",
-        "Acronym": "SGML",
-        "Abbrev": "ISO 8879:1986",
-        "GlossDef": {
-                      "para": "A meta-markup language, used to create markup languages such as DocBook.",
-          "GlossSeeAlso": ["GML", "XML"]
-                  },
-        "GlossSee": "markup"
-              }
-          }
-      }
+  "name": "arthur",
+  "age": 20,
+  "language": [
+    "c",
+    "c++",
+    "guile",
+    "python"
+  ],
+  "unicode": {
+    "你好": "a\u4f60b\u597dc"
   }
 }

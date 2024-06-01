@@ -18,6 +18,10 @@ main (void)
       exit (1);
     }
 
-  printf ("json type: %d\n", json->type);
+  json_t *unicode = json_object_get (json, "unicode")->value;
+  json_pair_t *pair = json_object_get (unicode, "你好");
+  printf ("key: %s, value: %s\n", mstr_data (&pair->key),
+          mstr_data (&pair->value->data.string));
+
   json_free (json);
 }
