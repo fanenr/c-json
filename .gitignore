@@ -1,0 +1,12 @@
+# object file
+*.o
+
+# exe file
+test
+
+# other
+compile_commands.json
+
+# directory
+!/**/
+/.cache/
