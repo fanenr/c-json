@@ -31,7 +31,7 @@ struct json_t
     mstr_t string;
     array_t array;
     rbtree_t object;
-  } value;
+  } data;
 };
 
 struct json_pair_t
@@ -41,8 +41,10 @@ struct json_pair_t
   rbtree_node_t node;
 };
 
+void json_free (json_t *root);
+
 json_t *json_parse (const char *src);
 
-void json_free (json_t *root);
+json_pair_t *json_object_get (json_t *object, const char *key);
 
 #endif

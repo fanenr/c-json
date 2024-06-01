@@ -47,16 +47,16 @@ json_free (json_t *root)
   switch (root->type)
     {
     case JSON_STRING:
-      mstr_free (&root->value.string);
+      mstr_free (&root->data.string);
       break;
 
     case JSON_ARRAY:
-      array_for_each (&root->value.array, elem_free);
-      free (root->value.array.data);
+      array_for_each (&root->data.array, elem_free);
+      free (root->data.array.data);
       break;
 
     case JSON_OBJECT:
-      rbtree_for_each (&root->value.object, pair_free);
+      rbtree_for_each (&root->data.object, pair_free);
     }
 
   free (root);
@@ -165,7 +165,7 @@ static json_t *
 parse_array (const char **psrc)
 {
   json_t *ret = JSON_NEW (JSON_ARRAY);
-  array_t *array = &ret->value.array;
+  array_t *array = &ret->data.array;
   *array = (array_t){ .element = sizeof (json_t *) };
 
   *psrc += 1;
@@ -219,7 +219,7 @@ parse_number (const char **psrc)
   json_t *ret = JSON_NEW (JSON_NUMBER);
 
   char *end = (char *)src;
-  ret->value.number = strtod (src, &end);
+  ret->data.number = strtod (src, &end);
 
   if (src == end)
     goto err;
@@ -236,7 +236,7 @@ static json_t *
 parse_string (const char **psrc)
 {
   json_t *ret = JSON_NEW (JSON_STRING);
-  mstr_t *mstr = &ret->value.string;
+  mstr_t *mstr = &ret->data.string;
 
   if (!next_mstr (mstr, psrc))
     goto err;
@@ -251,7 +251,7 @@ static json_t *
 parse_object (const char **psrc)
 {
   json_t *ret = JSON_NEW (JSON_OBJECT);
-  rbtree_t *tree = &ret->value.object;
+  rbtree_t *tree = &ret->data.object;
   *tree = RBTREE_INIT;
 
   *psrc += 1;
@@ -331,6 +331,62 @@ pair_free (rbtree_node_t *n)
   free (pn);
 }
 
+#include <stdint.h>
+
+static inline bool
+next_mstr_unicode (mstr_t *mstr, const char *src)
+{
+  char row[5] = {};
+
+  for (int i = 0; i < 4; i++)
+    switch (row[i] = src[i])
+      {
+      case '0' ... '9':
+      case 'a' ... 'f':
+      case 'A' ... 'F':
+        break;
+
+      default:
+        return false;
+      }
+
+  char *end;
+  uint32_t code;
+  char result[5] = {};
+
+  code = strtol (row, &end, 16);
+  if (row == end)
+    return false;
+
+  if (code <= 0x7F)
+    result[0] = code;
+  else if (code <= 0x7FF)
+    {
+      result[0] = 0xC0 | (code >> 6);
+      result[1] = 0x80 | (code & 0x3F);
+    }
+  else if (code <= 0xFFFF)
+    {
+      result[0] = 0xE0 | (code >> 12);
+      result[1] = 0x80 | ((code >> 6) & 0x3F);
+      result[2] = 0x80 | (code & 0x3F);
+    }
+  else if (code <= 0x10FFFF)
+    {
+      result[0] = 0xF0 | (code >> 18);
+      result[1] = 0x80 | ((code >> 12) & 0x3F);
+      result[2] = 0x80 | ((code >> 6) & 0x3F);
+      result[3] = 0x80 | (code & 0x3F);
+    }
+  else
+    return false;
+
+  if (!mstr_cat_cstr (mstr, result))
+    return false;
+
+  return true;
+}
+
 static inline mstr_t *
 next_mstr (mstr_t *mstr, const char **psrc)
 {
@@ -386,7 +442,10 @@ next_mstr (mstr_t *mstr, const char **psrc)
             break;
 
           case 'u':
-            /* TODO: parse unicode */
+            if (!next_mstr_unicode (mstr, src))
+              goto err;
+            src += 4;
+            break;
 
           default:
             goto err;
@@ -409,4 +468,21 @@ pair_comp (const rbtree_node_t *a, const rbtree_node_t *b)
   const json_pair_t *pa = container_of (a, json_pair_t, node);
   const json_pair_t *pb = container_of (b, json_pair_t, node);
   return strcmp (mstr_data (&pa->key), mstr_data (&pb->key));
+}
+
+json_pair_t *
+json_object_get (json_t *object, const char *key)
+{
+  rbtree_t *tree = &object->data.object;
+  json_pair_t target = { .key = MSTR_INIT };
+
+  if (!mstr_assign_cstr (&target.key, key))
+    return NULL;
+
+  rbtree_node_t *node;
+
+  if (!(node = rbtree_find (tree, &target.node, pair_comp)))
+    return NULL;
+
+  return container_of (node, json_pair_t, node);
 }
