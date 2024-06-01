@@ -91,11 +91,7 @@ parse (const char **psrc)
       return parse_array (psrc);
 
     case 'f':
-      return parse_const (psrc);
-
     case 't':
-      return parse_const (psrc);
-
     case 'n':
       return parse_const (psrc);
     }
@@ -211,8 +207,7 @@ err2:
 err:
   array_for_each (array, elem_free);
   free (array->data);
-  free (ret);
-
+  free ((void *)ret);
   return NULL;
 }
 
@@ -244,12 +239,10 @@ parse_string (const char **psrc)
 
   if (!next_mstr (mstr, psrc))
     goto err;
-
   return ret;
 
 err:
   free (ret);
-
   return NULL;
 }
 
