@@ -78,6 +78,7 @@ parse (const char **psrc)
 {
   switch (**psrc)
     {
+    case '-':
     case '0' ... '9':
       return parse_number (psrc);
 
@@ -352,15 +353,36 @@ next_mstr (mstr_t *mstr, const char **psrc)
       case '\\':
         switch (ch = *src++)
           {
-          case '\\':
-          case '"':
           case '/':
+            mstr_cat_char (mstr, '/');
+            break;
+
+          case '"':
+            mstr_cat_char (mstr, '"');
+            break;
+
+          case '\\':
+            mstr_cat_char (mstr, '\\');
+            break;
+
           case 'b':
+            mstr_cat_char (mstr, '\b');
+            break;
+
           case 'f':
+            mstr_cat_char (mstr, '\f');
+            break;
+
           case 'n':
+            mstr_cat_char (mstr, '\n');
+            break;
+
           case 'r':
+            mstr_cat_char (mstr, '\r');
+            break;
+
           case 't':
-            mstr_cat_char (mstr, ch);
+            mstr_cat_char (mstr, '\t');
             break;
 
           case 'u':
