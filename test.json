@@ -1,16 +1,33 @@
 {
-  "name": "arthur",
   "age": 20,
-  "language": [
+  "student": true,
+  "married": false,
+  "name": "arthur",
+  "girlfriend": null,
+  "favorite language": [
     "c",
     "c++",
     "guile",
     "python"
   ],
-  "unicode": {
-    "你好": "\u4f60\u597d",
-    "a你b好c": "a\u4f60b\u597dc",
-    "我喜欢": "\u6211\u559c\u6b22",
-    "\"A我B喜C欢D\"": "\"A\u6211B\u559cC\u6b22D\""
+  "other": {
+    "array": [
+      [],
+      {},
+      3.14,
+      -123,
+      "\"string\""
+    ],
+    "object": {
+      "array": [],
+      "object": {},
+      "string": "a"
+    },
+    "unicode": {
+      "你好": "\u4f60\u597d",
+      "a你b好c": "a\u4f60b\u597dc",
+      "我喜欢": "\u6211\u559c\u6b22",
+      "A我B喜C欢D": "A\u6211B\u559cC\u6b22D"
+    }
   }
 }
