@@ -127,11 +127,13 @@ parse_const (const char **psrc)
   switch (**psrc)
     {
     case 'f':
+      ret->data.boolean = false;
       target = "false";
       len = 5;
       break;
 
     case 't':
+      ret->data.boolean = true;
       target = "true";
       len = 4;
       break;
@@ -661,13 +663,13 @@ stringify_object (mstr_t *mstr, const json_t *json)
       if (i && !mstr_cat_char (mstr, ','))
         goto err;
 
-      if (!(stringify_string (mstr, &key)))
+      if (!stringify_string (mstr, &key))
         goto err;
 
-      if (!(mstr_cat_cstr (mstr, ": ")))
+      if (!mstr_cat_cstr (mstr, ": "))
         goto err;
 
-      if (!(stringify (mstr, value)))
+      if (!stringify (mstr, value))
         goto err;
 
       if (node->right && !stack_push (node->right))

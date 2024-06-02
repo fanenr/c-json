@@ -11,20 +11,13 @@ main (void)
   FILE *file = fopen ("test.json", "r");
   size_t len = fread (buff, 1, 4096, file);
   json_t *json = json_decode (buff);
+  mstr_t result = MSTR_INIT;
 
   if (!json)
     {
       printf ("parse failed\n");
       exit (1);
     }
-
-  json_t *unicode = json_object_get (json, "unicode")->value;
-  json_pair_t *pair = json_object_get (unicode, "你好");
-
-  printf ("key: %s, value: %s\n", mstr_data (&pair->key),
-          mstr_data (&pair->value->data.string));
-
-  mstr_t result = MSTR_INIT;
 
   if (!json_encode (&result, json))
     {
@@ -36,4 +29,5 @@ main (void)
 
   mstr_free (&result);
   json_free (json);
+  fclose (file);
 }
