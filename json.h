@@ -43,7 +43,9 @@ struct json_pair_t
 
 void json_free (json_t *root);
 
-json_t *json_parse (const char *src);
+json_t *json_decode (const char *src);
+
+mstr_t *json_encode (mstr_t *mstr, const json_t *root);
 
 json_pair_t *json_object_get (json_t *object, const char *key);
 
