@@ -1,6 +1,7 @@
 #include "json.h"
 
 #include <ctype.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,22 +21,29 @@ static json_t *array_add (array_t *array, json_t *elem);
 static mstr_t *next_mstr (mstr_t *mstr, const char **psrc);
 static int pair_comp (const rbtree_node_t *a, const rbtree_node_t *b);
 
-#define ARRAY_EXPAN_RATIO 2
+static bool stringify (mstr_t *mstr, const json_t *json);
+static bool stringify_const (mstr_t *mstr, const json_t *json);
+static bool stringify_array (mstr_t *mstr, const json_t *json);
+static bool stringify_number (mstr_t *mstr, const json_t *json);
+static bool stringify_string (mstr_t *mstr, const json_t *json);
+static bool stringify_object (mstr_t *mstr, const json_t *json);
+
 #define ARRAY_INIT_CAP 8
-#define JSON_NEW(TYPE)                                                        \
-  ({                                                                          \
-    json_t *ret;                                                              \
-    if (!(ret = malloc (sizeof (json_t))))                                    \
-      return NULL;                                                            \
-    ret->type = (TYPE);                                                       \
-    ret;                                                                      \
-  })
+#define ARRAY_EXPAN_RATIO 2
 
 json_t *
-json_parse (const char *src)
+json_decode (const char *src)
 {
   skip_ws (&src);
   return parse (&src);
+}
+
+mstr_t *
+json_encode (mstr_t *mstr, const json_t *root)
+{
+  if (!stringify (mstr, root))
+    return NULL;
+  return mstr;
 }
 
 void
@@ -62,7 +70,7 @@ json_free (json_t *root)
   free (root);
 }
 
-void
+static void
 skip_ws (const char **psrc)
 {
   const char *src = *psrc;
@@ -73,7 +81,7 @@ skip_ws (const char **psrc)
   *psrc = src;
 }
 
-json_t *
+static json_t *
 parse (const char **psrc)
 {
   switch (**psrc)
@@ -99,6 +107,15 @@ parse (const char **psrc)
 
   return NULL;
 }
+
+#define JSON_NEW(TYPE)                                                        \
+  ({                                                                          \
+    json_t *ret;                                                              \
+    if (!(ret = malloc (sizeof (json_t))))                                    \
+      return NULL;                                                            \
+    ret->type = (TYPE);                                                       \
+    ret;                                                                      \
+  })
 
 static json_t *
 parse_const (const char **psrc)
@@ -316,6 +333,8 @@ err:
   return NULL;
 }
 
+#undef JSON_NEW
+
 static inline void
 elem_free (void *e)
 {
@@ -330,8 +349,6 @@ pair_free (rbtree_node_t *n)
   mstr_free (&pn->key);
   free (pn);
 }
-
-#include <stdint.h>
 
 static inline bool
 next_mstr_unicode (mstr_t *mstr, const char *src)
@@ -485,4 +502,191 @@ json_object_get (json_t *object, const char *key)
     return NULL;
 
   return container_of (node, json_pair_t, node);
+}
+
+static bool
+stringify (mstr_t *mstr, const json_t *json)
+{
+  switch (json->type)
+    {
+    case JSON_NULL:
+    case JSON_BOOL:
+      return stringify_const (mstr, json);
+
+    case JSON_ARRAY:
+      return stringify_array (mstr, json);
+
+    case JSON_NUMBER:
+      return stringify_number (mstr, json);
+
+    case JSON_STRING:
+      return stringify_string (mstr, json);
+
+    case JSON_OBJECT:
+      return stringify_object (mstr, json);
+    }
+
+  return false;
+}
+
+static bool
+stringify_const (mstr_t *mstr, const json_t *json)
+{
+  switch (json->type)
+    {
+    case JSON_NULL:
+      return mstr_cat_cstr (mstr, "null");
+
+    case JSON_BOOL:
+      return mstr_cat_cstr (mstr, json->data.boolean ? "true" : "false");
+    }
+
+  return false;
+}
+
+static bool
+stringify_array (mstr_t *mstr, const json_t *json)
+{
+  const array_t *array = &json->data.array;
+
+  if (!mstr_cat_char (mstr, '['))
+    return false;
+
+  for (size_t i = 0; i < array->size; i++)
+    {
+      json_t *elem = *(json_t **)array_at (array, i);
+
+      if (i && !mstr_cat_char (mstr, ','))
+        return false;
+
+      if (!stringify (mstr, elem))
+        return false;
+    }
+
+  if (!mstr_cat_char (mstr, ']'))
+    return false;
+
+  return true;
+}
+
+#include <stdio.h>
+
+static bool
+stringify_number (mstr_t *mstr, const json_t *json)
+{
+  char conv[16] = {};
+  double num = json->data.number;
+
+  if (snprintf (conv, 16, "%lf", num) < 0)
+    return false;
+
+  if (!mstr_cat_cstr (mstr, conv))
+    return false;
+
+  return true;
+}
+
+static bool
+stringify_string (mstr_t *mstr, const json_t *json)
+{
+  const mstr_t *src = &json->data.string;
+  const char *str = mstr_data (src);
+  size_t len = mstr_len (src);
+
+  if (!mstr_cat_char (mstr, '"'))
+    return false;
+
+  for (size_t i = 0; i < len; i++)
+    {
+      char ch = str[i];
+      switch (ch)
+        {
+        case '"':
+          if (!mstr_cat_cstr (mstr, "\\\""))
+            return false;
+          break;
+
+        default:
+          if (!mstr_cat_char (mstr, ch))
+            return false;
+          break;
+        }
+    }
+
+  if (!mstr_cat_char (mstr, '"'))
+    return false;
+
+  return true;
+}
+
+static bool
+stringify_object (mstr_t *mstr, const json_t *json)
+{
+  const rbtree_t *tree = &json->data.object;
+  array_t stack = { .element = sizeof (rbtree_node_t *) };
+
+  if (!mstr_cat_char (mstr, '{'))
+    return false;
+
+  if (!(stack.cap = tree->size))
+    goto end;
+
+  if (!(stack.data = malloc (stack.cap * stack.element)))
+    return false;
+
+#define stack_push(NODE)                                                      \
+  ({                                                                          \
+    bool ret = false;                                                         \
+    rbtree_node_t **inpos;                                                    \
+    if ((inpos = array_push_back (&stack)))                                   \
+      {                                                                       \
+        *inpos = (NODE);                                                      \
+        ret = true;                                                           \
+      }                                                                       \
+    ret;                                                                      \
+  })
+
+  if (!stack_push (tree->root))
+    goto err;
+
+  for (size_t i = 0; stack.size; i++)
+    {
+      rbtree_node_t *node = *(rbtree_node_t **)array_last (&stack);
+      json_pair_t *pair = container_of (node, json_pair_t, node);
+      json_t key = { .data = { .string = pair->key } };
+      json_t *value = pair->value;
+
+      array_pop_back (&stack);
+
+      if (i && !mstr_cat_char (mstr, ','))
+        goto err;
+
+      if (!(stringify_string (mstr, &key)))
+        goto err;
+
+      if (!(mstr_cat_cstr (mstr, ": ")))
+        goto err;
+
+      if (!(stringify (mstr, value)))
+        goto err;
+
+      if (node->right && !stack_push (node->right))
+        goto err;
+
+      if (node->left && !stack_push (node->left))
+        goto err;
+    }
+
+#undef stack_push
+
+end:
+  if (!mstr_cat_char (mstr, '}'))
+    goto err;
+
+  free (stack.data);
+  return true;
+
+err:
+  free (stack.data);
+  return false;
 }
