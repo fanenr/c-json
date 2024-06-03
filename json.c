@@ -70,6 +70,23 @@ json_free (json_t *root)
   free (root);
 }
 
+json_pair_t *
+json_object_get (const json_t *object, const char *key)
+{
+  json_pair_t target = { .key.heap.data = (char *)key };
+  rbtree_node_t *node
+      = rbtree_find (&object->data.object, &target.node, pair_comp);
+  return node ? container_of (node, json_pair_t, node) : NULL;
+}
+
+json_t *
+json_array_get (const json_t *array, size_t index)
+{
+  const array_t *arr = &array->data.array;
+  json_t **ptr = array_at (arr, index);
+  return ptr ? *ptr : NULL;
+}
+
 static void
 skip_ws (const char **psrc)
 {
@@ -487,23 +504,6 @@ pair_comp (const rbtree_node_t *a, const rbtree_node_t *b)
   const json_pair_t *pa = container_of (a, json_pair_t, node);
   const json_pair_t *pb = container_of (b, json_pair_t, node);
   return strcmp (mstr_data (&pa->key), mstr_data (&pb->key));
-}
-
-json_pair_t *
-json_object_get (json_t *object, const char *key)
-{
-  rbtree_t *tree = &object->data.object;
-  json_pair_t target = { .key = MSTR_INIT };
-
-  if (!mstr_assign_cstr (&target.key, key))
-    return NULL;
-
-  rbtree_node_t *node;
-
-  if (!(node = rbtree_find (tree, &target.node, pair_comp)))
-    return NULL;
-
-  return container_of (node, json_pair_t, node);
 }
 
 static bool
