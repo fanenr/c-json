@@ -47,6 +47,8 @@ json_t *json_decode (const char *src);
 
 mstr_t *json_encode (mstr_t *mstr, const json_t *root);
 
-json_pair_t *json_object_get (json_t *object, const char *key);
+json_t *json_array_get (const json_t *array, size_t index);
+
+json_pair_t *json_object_get (const json_t *object, const char *key);
 
 #endif
