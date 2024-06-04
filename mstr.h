@@ -41,10 +41,9 @@ union mstr_t
 #define mstr_is_sso(PTR) ((PTR)->sso.flg == MSTR_FLG_SSO)
 #define mstr_is_heap(PTR) ((PTR)->sso.flg == MSTR_FLG_HEAP)
 
-#define mstr_cap(PTR) (mstr_is_heap (PTR) ? (PTR)->heap.cap : MSTR_SSO_CAP)
-#define mstr_len(PTR) (mstr_is_heap (PTR) ? (PTR)->heap.len : (PTR)->sso.len)
-#define mstr_data(PTR)                                                        \
-  (mstr_is_heap (PTR) ? (PTR)->heap.data : (PTR)->sso.data)
+#define mstr_cap(PTR) (mstr_is_sso (PTR) ? MSTR_SSO_CAP : (PTR)->heap.cap)
+#define mstr_len(PTR) (mstr_is_sso (PTR) ? (PTR)->sso.len : (PTR)->heap.len)
+#define mstr_data(PTR) (mstr_is_sso (PTR) ? (PTR)->sso.data : (PTR)->heap.data)
 
 extern int mstr_at (const mstr_t *str, size_t pos)
     __attribute__ ((nonnull (1)));

@@ -41,14 +41,24 @@ struct json_pair_t
   rbtree_node_t node;
 };
 
-void json_free (json_t *root);
+#define json_array(JSON) ((JSON)->data.array)
+#define json_number(JSON) ((JSON)->data.number)
+#define json_string(JSON) ((JSON)->data.string)
+#define json_object(JSON) ((JSON)->data.object)
+#define json_boolean(JSON) ((JSON)->data.boolean)
+
+void json_free (json_t *json);
 
 json_t *json_decode (const char *src);
+mstr_t *json_encode (mstr_t *mstr, const json_t *json);
 
-mstr_t *json_encode (mstr_t *mstr, const json_t *root);
+json_t *json_array_get (const json_t *json, size_t index);
+json_pair_t *json_object_get (const json_t *json, const char *key);
 
-json_t *json_array_get (const json_t *array, size_t index);
+json_t *json_array_add (json_t *json, json_t *new);
+json_pair_t *json_object_set (json_t *json, json_pair_t *new);
 
-json_pair_t *json_object_get (const json_t *object, const char *key);
+json_t *json_array_take (json_t *json, size_t index);
+json_pair_t *json_object_take (json_t *json, const char *key);
 
 #endif
