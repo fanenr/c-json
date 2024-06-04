@@ -31,6 +31,30 @@ static bool stringify_object (mstr_t *mstr, const json_t *json);
 #define ARRAY_INIT_CAP 8
 #define ARRAY_EXPAN_RATIO 2
 
+void
+json_free (json_t *json)
+{
+  if (!json)
+    return;
+
+  switch (json->type)
+    {
+    case JSON_STRING:
+      mstr_free (&json->data.string);
+      break;
+
+    case JSON_ARRAY:
+      array_for_each (&json->data.array, elem_free);
+      free (json->data.array.data);
+      break;
+
+    case JSON_OBJECT:
+      rbtree_for_each (&json->data.object, pair_free);
+    }
+
+  free (json);
+}
+
 json_t *
 json_decode (const char *src)
 {
@@ -39,52 +63,63 @@ json_decode (const char *src)
 }
 
 mstr_t *
-json_encode (mstr_t *mstr, const json_t *root)
+json_encode (mstr_t *mstr, const json_t *json)
 {
-  if (!stringify (mstr, root))
+  if (!stringify (mstr, json))
     return NULL;
   return mstr;
 }
 
-void
-json_free (json_t *root)
+json_t *
+json_array_get (const json_t *json, size_t index)
 {
-  if (!root)
-    return;
-
-  switch (root->type)
-    {
-    case JSON_STRING:
-      mstr_free (&root->data.string);
-      break;
-
-    case JSON_ARRAY:
-      array_for_each (&root->data.array, elem_free);
-      free (root->data.array.data);
-      break;
-
-    case JSON_OBJECT:
-      rbtree_for_each (&root->data.object, pair_free);
-    }
-
-  free (root);
+  const array_t *array = &json->data.array;
+  json_t **ptr = array_at (array, index);
+  return ptr ? *ptr : NULL;
 }
 
 json_pair_t *
-json_object_get (const json_t *object, const char *key)
+json_object_get (const json_t *json, const char *key)
 {
+  const rbtree_t *tree = &json->data.object;
   json_pair_t target = { .key.heap.data = (char *)key };
-  rbtree_node_t *node
-      = rbtree_find (&object->data.object, &target.node, pair_comp);
+  rbtree_node_t *node = rbtree_find (tree, &target.node, pair_comp);
   return node ? container_of (node, json_pair_t, node) : NULL;
 }
 
 json_t *
-json_array_get (const json_t *array, size_t index)
+json_array_add (json_t *json, json_t *new)
 {
-  const array_t *arr = &array->data.array;
-  json_t **ptr = array_at (arr, index);
-  return ptr ? *ptr : NULL;
+  array_t *array = &json->data.array;
+  return array_add (&json->data.array, new) ? new : NULL;
+}
+
+json_pair_t *
+json_object_set (json_t *json, json_pair_t *new)
+{
+  rbtree_t *tree = &json->data.object;
+  return rbtree_insert (tree, &new->node, pair_comp) ? new : NULL;
+}
+
+json_t *
+json_array_take (json_t *json, size_t index)
+{
+  array_t *array = &json->data.array;
+  json_t **ptr = array_at (array, index);
+  json_t *ret = ptr ? *ptr : NULL;
+  array_erase (array, index);
+  return ret;
+}
+
+json_pair_t *
+json_object_take (json_t *json, const char *key)
+{
+  rbtree_t *tree = &json->data.object;
+  json_pair_t target = { .key.heap.data = (char *)key };
+  rbtree_node_t *node = rbtree_find (tree, &target.node, pair_comp);
+  json_pair_t *ret = node ? container_of (node, json_pair_t, node) : NULL;
+  rbtree_erase (tree, node);
+  return ret;
 }
 
 static void
