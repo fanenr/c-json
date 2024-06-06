@@ -55,8 +55,8 @@ mstr_t *json_encode (mstr_t *mstr, const json_t *json);
 json_t *json_array_get (const json_t *json, size_t index);
 json_pair_t *json_object_get (const json_t *json, const char *key);
 
-json_t *json_array_add (json_t *json, json_t *new);
-json_pair_t *json_object_set (json_t *json, json_pair_t *new);
+bool json_array_add (json_t *json, json_t *new);
+bool json_object_add (json_t *json, json_pair_t *new);
 
 json_t *json_array_take (json_t *json, size_t index);
 json_pair_t *json_object_take (json_t *json, const char *key);
