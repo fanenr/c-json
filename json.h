@@ -47,6 +47,7 @@ struct json_pair_t
 #define json_object(JSON) ((JSON)->data.object)
 #define json_boolean(JSON) ((JSON)->data.boolean)
 
+json_t *json_new (int type);
 void json_free (json_t *json);
 
 json_t *json_decode (const char *src);

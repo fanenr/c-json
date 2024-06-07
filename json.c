@@ -30,6 +30,48 @@ static void object_free (rbtree_t *tree);
 static bool next_string (mstr_t *mstr, const char **psrc);
 static int pair_comp (const rbtree_node_t *a, const rbtree_node_t *b);
 
+json_t *
+json_new (int type)
+{
+  json_t *new;
+
+  if (!(new = malloc (sizeof (json_t))))
+    return NULL;
+
+  switch (new->type = type)
+    {
+    case JSON_NULL:
+      break;
+
+    case JSON_BOOL:
+      new->data.boolean = false;
+      break;
+
+    case JSON_ARRAY:
+      new->data.array = ARRAY_INIT;
+      new->data.array.element = sizeof (json_t *);
+      break;
+
+    case JSON_NUMBER:
+      new->data.number = 0;
+      break;
+
+    case JSON_STRING:
+      new->data.string = MSTR_INIT;
+      break;
+
+    case JSON_OBJECT:
+      new->data.object = RBTREE_INIT;
+      break;
+
+    default:
+      free (new);
+      return NULL;
+    }
+
+  return new;
+}
+
 void
 json_free (json_t *json)
 {
@@ -174,9 +216,8 @@ parse (const char **psrc)
 #define JSON_NEW(TYPE)                                                        \
   ({                                                                          \
     json_t *ret;                                                              \
-    if (!(ret = malloc (sizeof (json_t))))                                    \
+    if (!(ret = json_new (TYPE)))                                             \
       return NULL;                                                            \
-    ret->type = (TYPE);                                                       \
     ret;                                                                      \
   })
 
@@ -224,7 +265,6 @@ parse_array (const char **psrc)
 {
   json_t *ret = JSON_NEW (JSON_ARRAY);
   array_t *array = &ret->data.array;
-  *array = (array_t){ .element = sizeof (json_t *) };
 
   *psrc += 1;
   skip_ws (psrc);
@@ -240,6 +280,7 @@ parse_array (const char **psrc)
     {
       if (!(elem = parse (psrc)))
         goto err;
+
       if (!json_array_add (ret, elem))
         goto err2;
 
@@ -295,7 +336,6 @@ parse_string (const char **psrc)
 {
   json_t *ret = JSON_NEW (JSON_STRING);
   mstr_t *mstr = &ret->data.string;
-  *mstr = MSTR_INIT;
 
   if (!next_string (mstr, psrc))
     goto err;
@@ -311,7 +351,6 @@ parse_object (const char **psrc)
 {
   json_t *ret = JSON_NEW (JSON_OBJECT);
   rbtree_t *tree = &ret->data.object;
-  *tree = RBTREE_INIT;
 
   *psrc += 1;
   skip_ws (psrc);
