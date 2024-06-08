@@ -72,6 +72,20 @@ json_new (int type)
   return new;
 }
 
+json_pair_t *
+json_pair_new (mstr_t key, json_t *value)
+{
+  json_pair_t *new;
+
+  if (!(new = malloc (sizeof (json_pair_t))))
+    return NULL;
+
+  new->value = value;
+  new->key = key;
+
+  return new;
+}
+
 void
 json_free (json_t *json)
 {
@@ -110,23 +124,6 @@ json_encode (mstr_t *mstr, const json_t *json)
   return mstr;
 }
 
-json_t *
-json_array_get (const json_t *json, size_t index)
-{
-  const array_t *array = &json->data.array;
-  json_t **ptr = array_at (array, index);
-  return ptr ? *ptr : NULL;
-}
-
-json_pair_t *
-json_object_get (const json_t *json, const char *key)
-{
-  const rbtree_t *tree = &json->data.object;
-  json_pair_t target = { .key.heap.data = (char *)key };
-  rbtree_node_t *node = rbtree_find (tree, &target.node, pair_comp);
-  return node ? container_of (node, json_pair_t, node) : NULL;
-}
-
 bool
 json_array_add (json_t *json, json_t *new)
 {
@@ -136,8 +133,8 @@ json_array_add (json_t *json, json_t *new)
   if (cap <= array->size)
     {
       size_t newcap = cap ? cap * ARRAY_EXPAN_RATIO : ARRAY_INIT_CAP;
-      void *newdata = realloc (array->data, newcap * array->element);
 
+      void *newdata = realloc (array->data, newcap * array->element);
       if (newdata == NULL)
         return NULL;
 
@@ -146,15 +143,12 @@ json_array_add (json_t *json, json_t *new)
     }
 
   json_t **inpos = array_push_back (array);
+
+  if (inpos == NULL)
+    return NULL;
+
   *inpos = new;
   return true;
-}
-
-bool
-json_object_add (json_t *json, json_pair_t *new)
-{
-  rbtree_t *tree = &json->data.object;
-  return rbtree_insert (tree, &new->node, pair_comp);
 }
 
 json_t *
@@ -166,6 +160,21 @@ json_array_take (json_t *json, size_t index)
   return ret;
 }
 
+json_t *
+json_array_get (const json_t *json, size_t index)
+{
+  const array_t *array = &json->data.array;
+  json_t **ptr = array_at (array, index);
+  return ptr ? *ptr : NULL;
+}
+
+bool
+json_object_add (json_t *json, json_pair_t *new)
+{
+  rbtree_t *tree = &json->data.object;
+  return rbtree_insert (tree, &new->node, pair_comp);
+}
+
 json_pair_t *
 json_object_take (json_t *json, const char *key)
 {
@@ -173,6 +182,15 @@ json_object_take (json_t *json, const char *key)
   if ((ret = json_object_get (json, key)))
     rbtree_erase (&json->data.object, &ret->node);
   return ret;
+}
+
+json_pair_t *
+json_object_get (const json_t *json, const char *key)
+{
+  const rbtree_t *tree = &json->data.object;
+  json_pair_t target = { .key.heap.data = (char *)key };
+  rbtree_node_t *node = rbtree_find (tree, &target.node, pair_comp);
+  return node ? container_of (node, json_pair_t, node) : NULL;
 }
 
 static void
