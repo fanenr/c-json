@@ -30,6 +30,29 @@ static void object_free (rbtree_t *tree);
 static bool next_string (mstr_t *mstr, const char **psrc);
 static int pair_comp (const rbtree_node_t *a, const rbtree_node_t *b);
 
+void
+json_free (json_t *json)
+{
+  if (!json)
+    return;
+
+  switch (json->type)
+    {
+    case JSON_STRING:
+      mstr_free (&json->data.string);
+      break;
+
+    case JSON_ARRAY:
+      array_free (&json->data.array);
+      break;
+
+    case JSON_OBJECT:
+      object_free (&json->data.object);
+    }
+
+  free (json);
+}
+
 json_t *
 json_new (int type)
 {
@@ -84,29 +107,6 @@ json_pair_new (mstr_t key, json_t *value)
   new->key = key;
 
   return new;
-}
-
-void
-json_free (json_t *json)
-{
-  if (!json)
-    return;
-
-  switch (json->type)
-    {
-    case JSON_STRING:
-      mstr_free (&json->data.string);
-      break;
-
-    case JSON_ARRAY:
-      array_free (&json->data.array);
-      break;
-
-    case JSON_OBJECT:
-      object_free (&json->data.object);
-    }
-
-  free (json);
 }
 
 json_t *

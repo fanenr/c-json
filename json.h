@@ -41,26 +41,26 @@ struct json_pair_t
   rbtree_node_t node;
 };
 
-#define json_is_object(JSON) ((JSON)->type == JSON_OBJECT)
-#define json_is_string(JSON) ((JSON)->type == JSON_STRING)
-#define json_is_number(JSON) ((JSON)->type == JSON_NUMBER)
-#define json_is_array(JSON) ((JSON)->type == JSON_ARRAY)
 #define json_is_bool(JSON) ((JSON)->type == JSON_BOOL)
+#define json_is_array(JSON) ((JSON)->type == JSON_ARRAY)
+#define json_is_number(JSON) ((JSON)->type == JSON_NUMBER)
+#define json_is_string(JSON) ((JSON)->type == JSON_STRING)
+#define json_is_object(JSON) ((JSON)->type == JSON_OBJECT)
 
-json_t *json_new (int type);
-json_pair_t *json_pair_new (mstr_t key, json_t *value);
+extern void json_free (json_t *json);
 
-void json_free (json_t *json);
+extern json_t *json_new (int type);
+extern json_pair_t *json_pair_new (mstr_t key, json_t *value);
 
-json_t *json_decode (const char *src);
-mstr_t *json_encode (mstr_t *mstr, const json_t *json);
+extern json_t *json_decode (const char *src);
+extern mstr_t *json_encode (mstr_t *mstr, const json_t *json);
 
-bool json_array_add (json_t *json, json_t *new);
-json_t *json_array_take (json_t *json, size_t index);
-json_t *json_array_get (const json_t *json, size_t index);
+extern bool json_array_add (json_t *json, json_t *new);
+extern json_t *json_array_take (json_t *json, size_t index);
+extern json_t *json_array_get (const json_t *json, size_t index);
 
-bool json_object_add (json_t *json, json_pair_t *new);
-json_pair_t *json_object_take (json_t *json, const char *key);
-json_pair_t *json_object_get (const json_t *json, const char *key);
+extern bool json_object_add (json_t *json, json_pair_t *new);
+extern json_pair_t *json_object_take (json_t *json, const char *key);
+extern json_pair_t *json_object_get (const json_t *json, const char *key);
 
 #endif
