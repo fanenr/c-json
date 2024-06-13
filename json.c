@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -209,6 +210,7 @@ parse (const char **psrc)
 {
   switch (**psrc)
     {
+    case '+':
     case '-':
     case '0' ... '9':
       return parse_number (psrc);
@@ -503,8 +505,6 @@ stringify_array (mstr_t *mstr, const json_t *json)
   return true;
 }
 
-#include <stdio.h>
-
 static bool
 stringify_number (mstr_t *mstr, const json_t *json)
 {
@@ -573,7 +573,7 @@ stringify_object (mstr_t *mstr, const json_t *json)
       rbtree_node_t *node = stack[stack_size - 1];
       json_pair_t *pair = container_of (node, json_pair_t, node);
       rbtree_node_t *right = node->right, *left = node->left;
-      json_t key = { .data = { .string = pair->key } };
+      json_t key = { .data.string = pair->key };
 
       stack_size--;
 
@@ -650,27 +650,31 @@ object_free (rbtree_t *tree)
 static bool
 next_unicode (mstr_t *mstr, const char *src)
 {
-  char row[5] = {};
-
-  for (int i = 0; i < 4; i++)
-    switch (row[i] = src[i])
-      {
-      case '0' ... '9':
-      case 'a' ... 'f':
-      case 'A' ... 'F':
-        break;
-
-      default:
-        return false;
-      }
-
-  char *end;
-  uint32_t code;
+  uint32_t code = 0;
   char result[5] = {};
 
-  code = strtol (row, &end, 16);
-  if (row == end)
-    return false;
+  for (int i = 0; i < 4; i++)
+    {
+      char ch;
+      code <<= 4;
+      switch (ch = src[i])
+        {
+        case '0' ... '9':
+          code += ch - '0';
+          break;
+
+        case 'a' ... 'f':
+          code += ch + 10 - 'a';
+          break;
+
+        case 'A' ... 'F':
+          code += ch + 10 - 'A';
+          break;
+
+        default:
+          return false;
+        }
+    }
 
   if (code <= 0x7F)
     result[0] = code;
