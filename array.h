@@ -3,13 +3,9 @@
 
 #include <stddef.h>
 
-#define gcc_likely(exp) __builtin_expect (!!(exp), 1)
-#define gcc_unlikely(exp) __builtin_expect (!!(exp), 0)
-#define gcc_memcpy(dest, src, n) __builtin_memcpy ((dest), (src), (n))
-#define gcc_memmove(dest, src, n) __builtin_memmove ((dest), (src), (n))
-
 #define container_of(ptr, type, member)                                       \
   ((type *)((void *)(ptr) - offsetof (type, member)))
+
 #define attr_nonnull(...) __attribute__ ((nonnull (__VA_ARGS__)))
 
 typedef struct array_t array_t;
@@ -50,12 +46,13 @@ extern void array_pop_back (array_t *arr) attr_nonnull (1);
 /* **************************************************************** */
 
 typedef void array_visit_t (void *e);
+
 typedef int array_comp_t (const void *a, const void *b);
 
 extern void *array_find (const array_t *arr, const void *target,
                          array_comp_t *comp) attr_nonnull (1, 2, 3);
 
-extern void array_for_each (array_t *arr, array_visit_t *visit)
+extern void array_visit (array_t *arr, array_visit_t *visit)
     attr_nonnull (1, 2);
 
 #endif
