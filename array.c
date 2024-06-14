@@ -1,14 +1,18 @@
 #include "array.h"
 
+#define likely(exp) __builtin_expect (!!(exp), 1)
+#define unlikely(exp) __builtin_expect (!!(exp), 0)
+#define memmove(dest, src, n) __builtin_memmove ((dest), (src), (n))
+
 void *
 array_insert (array_t *arr, size_t pos)
 {
   size_t size = arr->size;
 
-  if (gcc_unlikely (pos == size))
+  if (unlikely (pos == size))
     return array_push_back (arr);
 
-  if (gcc_unlikely (pos > size || size >= arr->cap))
+  if (unlikely (pos > size || size >= arr->cap))
     return NULL;
 
   size_t element = arr->element;
@@ -16,7 +20,7 @@ array_insert (array_t *arr, size_t pos)
   size_t len = (size - pos) * element;
   void *next = in + element;
 
-  if (gcc_memmove (next, in, len) != next)
+  if (memmove (next, in, len) != next)
     return NULL;
 
   arr->size++;
@@ -26,7 +30,7 @@ array_insert (array_t *arr, size_t pos)
 void *
 array_push_front (array_t *arr)
 {
-  if (gcc_unlikely (arr->size >= arr->cap))
+  if (unlikely (arr->size >= arr->cap))
     return NULL;
 
   size_t element = arr->element;
@@ -34,7 +38,7 @@ array_push_front (array_t *arr)
   size_t len = arr->size * element;
   void *next = data + element;
 
-  if (gcc_memmove (next, data, len) != next)
+  if (memmove (next, data, len) != next)
     return NULL;
 
   arr->size++;
@@ -44,7 +48,7 @@ array_push_front (array_t *arr)
 void *
 array_push_back (array_t *arr)
 {
-  if (gcc_unlikely (arr->size >= arr->cap))
+  if (unlikely (arr->size >= arr->cap))
     return NULL;
   return arr->data + arr->element * arr->size++;
 }
@@ -54,7 +58,7 @@ array_erase (array_t *arr, size_t pos)
 {
   size_t size = arr->size;
 
-  if (gcc_unlikely (pos >= arr->size))
+  if (unlikely (pos >= arr->size))
     return;
 
   if (pos == size - 1)
@@ -65,7 +69,7 @@ array_erase (array_t *arr, size_t pos)
   size_t len = (size - pos - 1) * element;
   void *next = rm + element;
 
-  if (gcc_memmove (rm, next, len) != rm)
+  if (memmove (rm, next, len) != rm)
     return;
 
 dec_size:
@@ -77,7 +81,7 @@ array_pop_front (array_t *arr)
 {
   size_t size = arr->size;
 
-  if (gcc_unlikely (!size))
+  if (unlikely (!size))
     return;
 
   if (size == 1)
@@ -88,7 +92,7 @@ array_pop_front (array_t *arr)
   size_t len = (size - 1) * element;
   void *next = data + element;
 
-  if (gcc_memmove (data, next, len) != data)
+  if (memmove (data, next, len) != data)
     return;
 
 dec_size:
@@ -123,7 +127,7 @@ array_find (const array_t *arr, const void *target, array_comp_t *comp)
 }
 
 void
-array_for_each (array_t *arr, array_visit_t *visit)
+array_visit (array_t *arr, array_visit_t *visit)
 {
   void *data = arr->data;
   size_t element = arr->element;

@@ -3,13 +3,9 @@
 
 #include <stddef.h>
 
-#define gcc_likely(exp) __builtin_expect (!!(exp), 1)
-#define gcc_unlikely(exp) __builtin_expect (!!(exp), 0)
-#define gcc_memcpy(dest, src, n) __builtin_memcpy ((dest), (src), (n))
-#define gcc_memmove(dest, src, n) __builtin_memmove ((dest), (src), (n))
-
 #define container_of(ptr, type, member)                                       \
   ((type *)((void *)(ptr) - offsetof (type, member)))
+
 #define attr_nonnull(...) __attribute__ ((nonnull (__VA_ARGS__)))
 
 typedef int rbtree_color_t;
@@ -48,6 +44,7 @@ extern void rbtree_erase (rbtree_t *tree, rbtree_node_t *node)
 /* **************************************************************** */
 
 typedef void rbtree_visit_t (rbtree_node_t *n);
+
 typedef int rbtree_comp_t (const rbtree_node_t *a, const rbtree_node_t *b);
 
 extern rbtree_node_t *rbtree_find (const rbtree_t *tree,
@@ -58,7 +55,7 @@ extern rbtree_node_t *rbtree_insert (rbtree_t *tree, rbtree_node_t *node,
                                      rbtree_comp_t *comp)
     attr_nonnull (1, 2, 3);
 
-extern void rbtree_for_each (rbtree_t *tree, rbtree_visit_t *visit)
+extern void rbtree_visit (rbtree_t *tree, rbtree_visit_t *visit)
     attr_nonnull (1, 2);
 
 #endif

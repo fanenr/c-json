@@ -1,7 +1,9 @@
 #include "rbtree.h"
 
-#define IS_RED(NODE) ((NODE) ? (NODE)->color == RBTREE_RED : 0)
+#define likely(exp) __builtin_expect (!!(exp), 1)
+#define unlikely(exp) __builtin_expect (!!(exp), 0)
 
+#define IS_RED(NODE) ((NODE) ? (NODE)->color == RBTREE_RED : 0)
 #define IS_BLACK(NODE) ((NODE) ? (NODE)->color == RBTREE_BLACK : 1)
 
 static inline void
@@ -249,7 +251,7 @@ rbtree_insert (rbtree_t *tree, rbtree_node_t *node, rbtree_comp_t *comp)
     {
       comp_ret = comp (node, curr);
 
-      if (gcc_unlikely (comp_ret == 0))
+      if (unlikely (comp_ret == 0))
         return NULL;
 
       parent = curr;
@@ -279,7 +281,7 @@ rbtree_for_each_impl (rbtree_node_t *node, rbtree_visit_t *visit)
 }
 
 void
-rbtree_for_each (rbtree_t *tree, rbtree_visit_t *visit)
+rbtree_visit (rbtree_t *tree, rbtree_visit_t *visit)
 {
   rbtree_for_each_impl (tree->root, visit);
 }
