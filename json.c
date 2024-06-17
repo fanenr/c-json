@@ -511,7 +511,7 @@ stringify_number (mstr_t *mstr, const json_t *json)
   char conv[16] = {};
   double num = json->data.number;
 
-  if (snprintf (conv, 16, "%lf", num) < 0)
+  if (snprintf (conv, 16, "%lf", num) <= 0)
     return false;
 
   if (!mstr_cat_cstr (mstr, conv))
