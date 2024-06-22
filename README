@@ -1,3 +1,5 @@
-A tiny json library
+A tiny json library.
+
+Usage: see json.h and test.c.
 
 Some intrusive data structures are used (https://github.com/fanenr/c-algo.git).
