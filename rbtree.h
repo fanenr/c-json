@@ -39,6 +39,14 @@ extern void rbtree_link (rbtree_t *tree, rbtree_node_t **inpos,
 extern void rbtree_erase (rbtree_t *tree, rbtree_node_t *node)
     attr_nonnull (1, 2);
 
+extern rbtree_node_t *rbtree_last (const rbtree_t *tree) attr_nonnull (1);
+
+extern rbtree_node_t *rbtree_first (const rbtree_t *tree) attr_nonnull (1);
+
+extern rbtree_node_t *rbtree_next (const rbtree_node_t *node) attr_nonnull (1);
+
+extern rbtree_node_t *rbtree_prev (const rbtree_node_t *node) attr_nonnull (1);
+
 /* **************************************************************** */
 /*                               ext                                */
 /* **************************************************************** */
@@ -55,7 +63,7 @@ extern rbtree_node_t *rbtree_insert (rbtree_t *tree, rbtree_node_t *node,
                                      rbtree_comp_t *comp)
     attr_nonnull (1, 2, 3);
 
-extern void rbtree_visit (rbtree_t *tree, rbtree_visit_t *visit)
+extern void rbtree_visit (rbtree_t *tree, rbtree_visit_t *func)
     attr_nonnull (1, 2);
 
 #endif
