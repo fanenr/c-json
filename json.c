@@ -172,8 +172,7 @@ json_array_get (const json_t *json, size_t index)
 bool
 json_object_add (json_t *json, json_pair_t *new)
 {
-  rbtree_t *tree = &json->data.object;
-  return rbtree_insert (tree, &new->node, pair_comp);
+  return rbtree_insert (&json->data.object, &new->node, pair_comp);
 }
 
 json_pair_t *
@@ -188,9 +187,10 @@ json_object_take (json_t *json, const char *key)
 json_pair_t *
 json_object_get (const json_t *json, const char *key)
 {
-  const rbtree_t *tree = &json->data.object;
-  json_pair_t target = { .key.heap.data = (char *)key };
-  rbtree_node_t *node = rbtree_find (tree, &target.node, pair_comp);
+  json_pair_t target
+      = { .key.heap = { .data = (char *)key, .len = strlen (key) } };
+  rbtree_node_t *node
+      = rbtree_find (&json->data.object, &target.node, pair_comp);
   return node ? container_of (node, json_pair_t, node) : NULL;
 }
 
