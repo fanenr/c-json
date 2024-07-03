@@ -10,6 +10,8 @@
 #define ARRAY_EXPAN_RATIO 2
 #define OBJECT_MAX_HEIGHT 48
 
+#define unlikely(exp) __builtin_expect (!!(exp), 0)
+
 static void skip_ws (const char **psrc);
 
 static json_t *parse (const char **psrc);
@@ -172,7 +174,30 @@ json_array_get (const json_t *json, size_t index)
 bool
 json_object_add (json_t *json, json_pair_t *new)
 {
-  return rbtree_insert (&json->data.object, &new->node, pair_comp);
+  int comp_ret = 0;
+  rbtree_node_t **inpos;
+  rbtree_node_t *parent = NULL;
+
+  rbtree_node_t *node = &new->node;
+  rbtree_t *tree = &json->data.object;
+
+  for (rbtree_node_t *curr = tree->root; curr;)
+    {
+      comp_ret = pair_comp (node, curr);
+
+      if (unlikely (comp_ret == 0))
+        return false;
+
+      parent = curr;
+      curr = comp_ret < 0 ? curr->left : curr->right;
+    }
+
+  inpos = comp_ret ? (comp_ret < 0 ? &parent->left : &parent->right)
+                   : &tree->root;
+
+  rbtree_link (tree, inpos, parent, node);
+
+  return true;
 }
 
 json_pair_t *
@@ -189,9 +214,20 @@ json_object_get (const json_t *json, const char *key)
 {
   json_pair_t target
       = { .key.heap = { .data = (char *)key, .len = strlen (key) } };
-  rbtree_node_t *node
-      = rbtree_find (&json->data.object, &target.node, pair_comp);
-  return node ? container_of (node, json_pair_t, node) : NULL;
+
+  rbtree_node_t *node = &target.node;
+
+  for (rbtree_node_t *curr = json->data.object.root; curr;)
+    {
+      int comp_ret = pair_comp (node, curr);
+
+      if (comp_ret == 0)
+        return container_of (curr, json_pair_t, node);
+
+      curr = comp_ret < 0 ? curr->left : curr->right;
+    }
+
+  return NULL;
 }
 
 static void
@@ -785,5 +821,5 @@ pair_comp (const rbtree_node_t *a, const rbtree_node_t *b)
 {
   const json_pair_t *pa = container_of (a, json_pair_t, node);
   const json_pair_t *pb = container_of (b, json_pair_t, node);
-  return strcmp (mstr_data (&pa->key), mstr_data (&pb->key));
+  return mstr_cmp_mstr (&pa->key, &pb->key);
 }
