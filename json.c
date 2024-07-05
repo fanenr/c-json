@@ -212,9 +212,7 @@ json_object_take (json_t *json, const char *key)
 json_pair_t *
 json_object_get (const json_t *json, const char *key)
 {
-  json_pair_t target
-      = { .key.heap = { .data = (char *)key, .len = strlen (key) } };
-
+  json_pair_t target = { .key = MSTR_VIEW (key, strlen (key)) };
   rbtree_node_t *node = &target.node;
 
   for (rbtree_node_t *curr = json->data.object.root; curr;)
