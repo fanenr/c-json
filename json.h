@@ -36,9 +36,9 @@ struct json_t
 
 struct json_pair_t
 {
-  mstr_t key;
-  json_t *value;
   rbtree_node_t node;
+  json_t *value;
+  mstr_t key;
 };
 
 #define json_is_bool(JSON) ((JSON)->type == JSON_BOOL)
@@ -47,10 +47,8 @@ struct json_pair_t
 #define json_is_string(JSON) ((JSON)->type == JSON_STRING)
 #define json_is_object(JSON) ((JSON)->type == JSON_OBJECT)
 
-extern void json_free (json_t *json);
-
 extern json_t *json_new (int type);
-extern json_pair_t *json_pair_new (mstr_t key, json_t *value);
+extern void json_free (json_t *json);
 
 extern json_t *json_decode (const char *src);
 extern mstr_t *json_encode (mstr_t *mstr, const json_t *json);

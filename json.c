@@ -30,31 +30,9 @@ static bool stringify_object (mstr_t *mstr, const json_t *json);
 
 static void array_free (array_t *array);
 static void object_free (rbtree_t *tree);
+static bool array_expand (array_t *array);
 static bool next_string (mstr_t *mstr, const char **psrc);
 static int pair_comp (const rbtree_node_t *a, const rbtree_node_t *b);
-
-void
-json_free (json_t *json)
-{
-  if (!json)
-    return;
-
-  switch (json->type)
-    {
-    case JSON_STRING:
-      mstr_free (&json->data.string);
-      break;
-
-    case JSON_ARRAY:
-      array_free (&json->data.array);
-      break;
-
-    case JSON_OBJECT:
-      object_free (&json->data.object);
-    }
-
-  free (json);
-}
 
 json_t *
 json_new (int type)
@@ -98,18 +76,27 @@ json_new (int type)
   return new;
 }
 
-json_pair_t *
-json_pair_new (mstr_t key, json_t *value)
+void
+json_free (json_t *json)
 {
-  json_pair_t *new;
+  if (!json)
+    return;
 
-  if (!(new = malloc (sizeof (json_pair_t))))
-    return NULL;
+  switch (json->type)
+    {
+    case JSON_STRING:
+      mstr_free (&json->data.string);
+      break;
 
-  new->value = value;
-  new->key = key;
+    case JSON_ARRAY:
+      array_free (&json->data.array);
+      break;
 
-  return new;
+    case JSON_OBJECT:
+      object_free (&json->data.object);
+    }
+
+  free (json);
 }
 
 json_t *
@@ -131,25 +118,10 @@ bool
 json_array_add (json_t *json, json_t *new)
 {
   array_t *array = &json->data.array;
-  size_t cap = array->cap;
-
-  if (cap <= array->size)
-    {
-      size_t newcap = cap ? cap * ARRAY_EXPAN_RATIO : ARRAY_INIT_CAP;
-
-      void *newdata = realloc (array->data, newcap * array->element);
-      if (newdata == NULL)
-        return NULL;
-
-      array->data = newdata;
-      array->cap = newcap;
-    }
+  if (!array_expand (array))
+    return false;
 
   json_t **inpos = array_push_back (array);
-
-  if (inpos == NULL)
-    return NULL;
-
   *inpos = new;
   return true;
 }
@@ -679,6 +651,26 @@ object_free (rbtree_t *tree)
       if (left)
         stack[stack_size++] = left;
     }
+}
+
+static bool
+array_expand (array_t *array)
+{
+  size_t cap = array->cap;
+  void *data = array->data;
+
+  if (array->size < cap)
+    return true;
+
+  if (!(cap = cap * ARRAY_EXPAN_RATIO))
+    cap = ARRAY_INIT_CAP;
+
+  if (!(data = realloc (data, cap * array->element)))
+    return false;
+
+  array->data = data;
+  array->cap = cap;
+  return true;
 }
 
 static bool
