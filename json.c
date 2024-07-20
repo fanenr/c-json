@@ -570,7 +570,8 @@ stringify_object (mstr_t *mstr, const json_t *json)
   if (!tree->size)
     goto end;
 
-  rbtree_node_t **stack = alloca (OBJECT_MAX_HEIGHT);
+  rbtree_node_t **stack
+      = alloca (OBJECT_MAX_HEIGHT * sizeof (rbtree_node_t *));
   size_t stack_size = 1;
   stack[0] = tree->root;
 
@@ -615,10 +616,7 @@ array_free (array_t *array)
   json_t **data = array->data;
 
   for (size_t i = 0; i < size; i++)
-    {
-      json_t *elem = data[i];
-      json_free (elem);
-    }
+    json_free (data[i]);
 
   free (data);
 }
@@ -629,7 +627,8 @@ object_free (rbtree_t *tree)
   if (!tree->size)
     return;
 
-  rbtree_node_t **stack = alloca (OBJECT_MAX_HEIGHT);
+  rbtree_node_t **stack
+      = alloca (OBJECT_MAX_HEIGHT * sizeof (rbtree_node_t *));
   size_t stack_size = 1;
   stack[0] = tree->root;
 
