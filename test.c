@@ -8,14 +8,15 @@ char buff[4096];
 int
 main (void)
 {
-  FILE *file = fopen ("test.json", "r");
-  size_t len = fread (buff, 1, 4096, file);
-  json_t *json = json_decode (buff);
+  json_t *json;
   mstr_t result = MSTR_INIT;
 
-  if (!json)
+  FILE *file = fopen ("test.json", "r");
+  size_t len = fread (buff, 1, 4096, file);
+
+  if (!(json = json_decode (buff)))
     {
-      printf ("parse failed\n");
+      printf ("decode failed\n");
       exit (1);
     }
 
@@ -25,7 +26,7 @@ main (void)
       exit (1);
     }
 
-  printf ("encode: %s\n", mstr_data (&result));
+  printf ("encode result: %s\n", mstr_data (&result));
 
   mstr_free (&result);
   json_free (json);
