@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #define container_of(ptr, type, member)                                       \
-  ((type *)((void *)(ptr) - offsetof (type, member)))
+  ((type *) ((void *) (ptr) - offsetof (type, member)))
 
 #define attr_nonnull(...) __attribute__ ((nonnull (__VA_ARGS__)))
 
@@ -50,7 +50,7 @@ typedef void array_visit_t (void *e);
 typedef int array_comp_t (const void *a, const void *b);
 
 extern void *array_find (const array_t *arr, const void *target,
-                         array_comp_t *comp) attr_nonnull (1, 2, 3);
+			 array_comp_t *comp) attr_nonnull (1, 2, 3);
 
 extern void array_visit (array_t *arr, array_visit_t *visit)
     attr_nonnull (1, 2);

@@ -158,14 +158,14 @@ json_object_add (json_t *json, json_pair_t *new)
       comp_ret = pair_comp (node, curr);
 
       if (unlikely (comp_ret == 0))
-        return false;
+	return false;
 
       parent = curr;
       curr = comp_ret < 0 ? curr->left : curr->right;
     }
 
   inpos = comp_ret ? (comp_ret < 0 ? &parent->left : &parent->right)
-                   : &tree->root;
+		   : &tree->root;
 
   rbtree_link (tree, inpos, parent, node);
 
@@ -192,7 +192,7 @@ json_object_get (const json_t *json, const char *key)
       int comp_ret = pair_comp (node, curr);
 
       if (comp_ret == 0)
-        return container_of (curr, json_pair_t, node);
+	return container_of (curr, json_pair_t, node);
 
       curr = comp_ret < 0 ? curr->left : curr->right;
     }
@@ -305,27 +305,27 @@ parse_array (const char **psrc)
   for (;;)
     {
       if (!(elem = parse (psrc)))
-        goto err;
+	goto err;
 
       if (!json_array_add (ret, elem))
-        goto err2;
+	goto err2;
 
       skip_ws (psrc);
 
       switch (**psrc)
-        {
-        case ',':
-          *psrc += 1;
-          skip_ws (psrc);
-          break;
+	{
+	case ',':
+	  *psrc += 1;
+	  skip_ws (psrc);
+	  break;
 
-        case ']':
-          *psrc += 1;
-          return ret;
+	case ']':
+	  *psrc += 1;
+	  return ret;
 
-        default:
-          goto err;
-        }
+	default:
+	  goto err;
+	}
     }
 
 err2:
@@ -333,7 +333,7 @@ err2:
 
 err:
   array_free (array);
-  free ((void *)ret);
+  free ((void *) ret);
   return NULL;
 }
 
@@ -343,7 +343,7 @@ parse_number (const char **psrc)
   const char *src = *psrc;
   json_t *ret = JSON_NEW (JSON_NUMBER);
 
-  char *end = (char *)src;
+  char *end = (char *) src;
   ret->data.number = strtod (src, &end);
 
   if (src == end)
@@ -391,42 +391,42 @@ parse_object (const char **psrc)
   for (;;)
     {
       if (!(pair = malloc (sizeof (json_pair_t))))
-        goto err;
+	goto err;
 
       pair->key = MSTR_INIT;
       if (!next_string (&pair->key, psrc))
-        goto err2;
+	goto err2;
 
       skip_ws (psrc);
 
       if (**psrc != ':')
-        goto err3;
+	goto err3;
       *psrc += 1;
 
       skip_ws (psrc);
 
       if (!(pair->value = parse (psrc)))
-        goto err3;
+	goto err3;
 
       if (!json_object_add (ret, pair))
-        goto err4;
+	goto err4;
 
       skip_ws (psrc);
 
       switch (**psrc)
-        {
-        case ',':
-          *psrc += 1;
-          skip_ws (psrc);
-          break;
+	{
+	case ',':
+	  *psrc += 1;
+	  skip_ws (psrc);
+	  break;
 
-        case '}':
-          *psrc += 1;
-          return ret;
+	case '}':
+	  *psrc += 1;
+	  return ret;
 
-        default:
-          goto err;
-        }
+	default:
+	  goto err;
+	}
     }
 
 err4:
@@ -440,7 +440,7 @@ err2:
 
 err:
   object_free (tree);
-  free ((void *)ret);
+  free ((void *) ret);
   return NULL;
 }
 
@@ -496,13 +496,13 @@ stringify_array (mstr_t *mstr, const json_t *json)
 
   for (size_t i = 0; i < array->size; i++)
     {
-      json_t *elem = *(json_t **)array_at (array, i);
+      json_t *elem = *(json_t **) array_at (array, i);
 
       if (i && !mstr_cat_char (mstr, ','))
-        return false;
+	return false;
 
       if (!stringify (mstr, elem))
-        return false;
+	return false;
     }
 
   if (!mstr_cat_char (mstr, ']'))
@@ -540,17 +540,17 @@ stringify_string (mstr_t *mstr, const json_t *json)
     {
       char ch = str[i];
       switch (ch)
-        {
-        case '"':
-          if (!mstr_cat_cstr (mstr, "\\\""))
-            return false;
-          break;
+	{
+	case '"':
+	  if (!mstr_cat_cstr (mstr, "\\\""))
+	    return false;
+	  break;
 
-        default:
-          if (!mstr_cat_char (mstr, ch))
-            return false;
-          break;
-        }
+	default:
+	  if (!mstr_cat_char (mstr, ch))
+	    return false;
+	  break;
+	}
     }
 
   if (!mstr_cat_char (mstr, '"'))
@@ -585,22 +585,22 @@ stringify_object (mstr_t *mstr, const json_t *json)
       stack_size--;
 
       if (i && !mstr_cat_char (mstr, ','))
-        return false;
+	return false;
 
       if (!stringify_string (mstr, &key))
-        return false;
+	return false;
 
       if (!mstr_cat_char (mstr, ':'))
-        return false;
+	return false;
 
       if (!stringify (mstr, pair->value))
-        return false;
+	return false;
 
       if (right)
-        stack[stack_size++] = right;
+	stack[stack_size++] = right;
 
       if (left)
-        stack[stack_size++] = left;
+	stack[stack_size++] = left;
     }
 
 end:
@@ -645,10 +645,10 @@ object_free (rbtree_t *tree)
       free (pair);
 
       if (right)
-        stack[stack_size++] = right;
+	stack[stack_size++] = right;
 
       if (left)
-        stack[stack_size++] = left;
+	stack[stack_size++] = left;
     }
 }
 
@@ -683,22 +683,22 @@ next_unicode (mstr_t *mstr, const char *src)
       char ch;
       code <<= 4;
       switch (ch = src[i])
-        {
-        case '0' ... '9':
-          code += ch - '0';
-          break;
+	{
+	case '0' ... '9':
+	  code += ch - '0';
+	  break;
 
-        case 'a' ... 'f':
-          code += ch + 10 - 'a';
-          break;
+	case 'a' ... 'f':
+	  code += ch + 10 - 'a';
+	  break;
 
-        case 'A' ... 'F':
-          code += ch + 10 - 'A';
-          break;
+	case 'A' ... 'F':
+	  code += ch + 10 - 'A';
+	  break;
 
-        default:
-          return false;
-        }
+	default:
+	  return false;
+	}
     }
 
   if (code <= 0x7F)
@@ -742,62 +742,62 @@ next_string (mstr_t *mstr, const char **psrc)
     switch (ch = *src++)
       {
       case '"':
-        *psrc = src;
-        return true;
+	*psrc = src;
+	return true;
 
       case '\0':
-        goto err;
+	goto err;
 
       case '\\':
-        switch (ch = *src++)
-          {
-          case '/':
-            mstr_cat_char (mstr, '/');
-            break;
+	switch (ch = *src++)
+	  {
+	  case '/':
+	    mstr_cat_char (mstr, '/');
+	    break;
 
-          case '"':
-            mstr_cat_char (mstr, '"');
-            break;
+	  case '"':
+	    mstr_cat_char (mstr, '"');
+	    break;
 
-          case '\\':
-            mstr_cat_char (mstr, '\\');
-            break;
+	  case '\\':
+	    mstr_cat_char (mstr, '\\');
+	    break;
 
-          case 'b':
-            mstr_cat_char (mstr, '\b');
-            break;
+	  case 'b':
+	    mstr_cat_char (mstr, '\b');
+	    break;
 
-          case 'f':
-            mstr_cat_char (mstr, '\f');
-            break;
+	  case 'f':
+	    mstr_cat_char (mstr, '\f');
+	    break;
 
-          case 'n':
-            mstr_cat_char (mstr, '\n');
-            break;
+	  case 'n':
+	    mstr_cat_char (mstr, '\n');
+	    break;
 
-          case 'r':
-            mstr_cat_char (mstr, '\r');
-            break;
+	  case 'r':
+	    mstr_cat_char (mstr, '\r');
+	    break;
 
-          case 't':
-            mstr_cat_char (mstr, '\t');
-            break;
+	  case 't':
+	    mstr_cat_char (mstr, '\t');
+	    break;
 
-          case 'u':
-            if (!next_unicode (mstr, src))
-              goto err;
-            src += 4;
-            break;
+	  case 'u':
+	    if (!next_unicode (mstr, src))
+	      goto err;
+	    src += 4;
+	    break;
 
-          default:
-            goto err;
-          }
-        break;
+	  default:
+	    goto err;
+	  }
+	break;
 
       default:
-        if (!mstr_cat_char (mstr, ch))
-          goto err;
-        break;
+	if (!mstr_cat_char (mstr, ch))
+	  goto err;
+	break;
       }
 
 err:

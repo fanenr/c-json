@@ -119,7 +119,7 @@ array_find (const array_t *arr, const void *target, array_comp_t *comp)
   for (size_t size = arr->size; size; size--)
     {
       if (comp (target, curr) == 0)
-        return curr;
+	return curr;
       curr += element;
     }
 
